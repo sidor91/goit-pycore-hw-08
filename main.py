@@ -4,17 +4,6 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 import pickle
 
-validate_phone_error_msg = (
-    "The phone should optionally contain country code (1-3 digits with/withount +) "
-    "and mandatory contain a regional code (1-4 digits with/without brackets()) followed by up to 9 digits. "
-    "Allowed separators are ' ', '-', '.'"
-)
-
-
-def is_valid_phone(phone):
-    pattern = r"^\+?\d{1,3}?[-.\s]?(\(\d{1,4}\)|\d{1,4})[-.\s]?\d{1,4}[-.\s]?\d{1,9}$"
-    return bool(re.fullmatch(pattern, phone))
-
 
 def input_error(func):
     def inner(*args, **kwargs):
@@ -35,13 +24,6 @@ def parse_input(user_input):
         raise ValueError("There are no arguments passed")
 
 
-def parse_date(date_str: str) -> datetime | None:
-    try:
-        return datetime.strptime(date_str, "%d.%m.%Y")
-    except ValueError:
-        return None
-
-
 @dataclass
 class Field:
     value: str
@@ -58,18 +40,34 @@ class Name(Field):
 
 
 class Phone(Field):
+    validate_phone_error_msg = (
+    "The phone should optionally contain country code (1-3 digits with/withount +) "
+    "and mandatory contain a regional code (1-4 digits with/without brackets()) followed by up to 9 digits. "
+    "Allowed separators are ' ', '-', '.'"
+    )
+
     def __init__(self, phone: str):
-        if not is_valid_phone(phone):
-            raise ValueError(validate_phone_error_msg)
+        if not self.is_valid_phone(phone):
+            raise ValueError(self.validate_phone_error_msg)
         super().__init__(phone)
+
+    def is_valid_phone(self, phone):
+        pattern = r"^\+?\d{1,3}?[-.\s]?(\(\d{1,4}\)|\d{1,4})[-.\s]?\d{1,4}[-.\s]?\d{1,9}$"
+        return bool(re.fullmatch(pattern, phone))
 
 
 class Birthday(Field):
     def __init__(self, value):
-        date = parse_date(value)
+        date = self.parse_date(value)
         if date is None:
             raise ValueError("Invalid date format. Use DD.MM.YYYY")
         super().__init__(value)
+
+    def parse_date(self, date_str: str) -> datetime | None:
+        try:
+            return datetime.strptime(date_str, "%d.%m.%Y")
+        except ValueError:
+            return None
 
 
 class Record:
